@@ -98,13 +98,28 @@ get_incident_files <- function(incident_file) {
   )
 }
 
-download_file <- function(file_url, path) {
-  file_name_split <- file_url %>% str_split("/")
-  file_content <- s %>% session_jump_to(file_details$file_url[1])
-  file_name <- URLdecode(paste(tail(file_name_split[[1]],2),collapse="_"))
+#' Downloads incident files
+#'
+#' Walks through incident files list column and saves files to designated path.
+#'
+#' @param incident_files List column of incident_files tibble
+#' @param path Path to save files to
+#'
+#' @return returns input invisibly
+#' @export
+download_incident_files <- function(incident_files, path) {
+  walk(incident_files$file_url, download_file, path)
+}
 
-  message(glue::glue("Saving file {file_name} to {here::here(path)}"))
-  writeBin(file_content$response$content, here::here(paste0(path,"/",file_name)))
+download_file <- function(file_url, path) {
+  if (!is.na(file_url)) {
+    file_name_split <- file_url %>% str_split("/")
+    file_content <- s %>% session_jump_to(file_url)
+    file_name <- URLdecode(paste(tail(file_name_split[[1]],2),collapse="_"))
+
+    message(glue::glue("Saving file {file_name} to {path}"))
+    writeBin(file_content$response$content, paste0(path,"/",file_name))
+  }
 }
 
 get_action_details <- function(actions) {
