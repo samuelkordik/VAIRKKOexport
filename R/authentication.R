@@ -86,7 +86,8 @@ get_credential <- function(credential = c("cid","username","password")) {
            cred <- paste(cred$username, collapse="")
          },
          password = {
-           cred <- keyring::key_get("VAIRKKO_user")
+           username <- keyring::key_list("VAIRKKO_user")
+           cred <- keyring::key_get("VAIRKKO_user", username=paste(username$username, collapse=""))
          }
          )
   if (str_length(cred) == 0) {
