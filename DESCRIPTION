@@ -24,7 +24,8 @@ Imports:
     tidyverse,
     glue,
     rvest (>= 1.0.0),
-    keyring
+    keyring,
+    here
 Suggests: 
     knitr,
     rmarkdown

@@ -68,14 +68,14 @@ get_incident_detail <- function(incidentID) {
   )
 }
 
-process_incident_files <- function(incident_file) {
+process_incident_files <- function(incident_file, path) {
   file_url = incident_file %>% html_element("td:nth-of-type(3) a") %>% html_attr("href")
   file_name_split <- file_url %>% str_split("/")
   file_content <- s %>% session_jump_to(file_details$file_url[1])
   file_name <- URLdecode(paste(tail(file_name_split[[1]],2),collapse="_"))
 
   message(glue::glue("Saving file {file_name}"))
-  writeBin(file_content$response$content, file_name)
+  writeBin(file_content$response$content, here::here(paste0(path,"/",file_name)))
 
   tibble(file_uploaded_on = incident_file %>% html_element("td:nth-of-type(2)") %>% html_text2(),
          file_url = incident_file %>% html_element("td:nth-of-type(3) a") %>% html_attr("href"),
