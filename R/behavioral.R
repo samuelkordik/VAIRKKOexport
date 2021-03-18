@@ -128,7 +128,7 @@ get_action_details <- function(actions) {
                            action_created = actions %>% html_element("td:nth-of-type(2) span") %>% html_attr("title"),
                            action_author = actions %>% html_element("td:nth-of-type(2) a") %>% html_text2(),
                            action_text = actions %>% html_element("td:nth-of-type(3)") %>% html_text2(),
-                           action_type = actions %>% html_element("td:nth-of-type(3) span") %>% html_text2(),
+                           action_type = actions %>% html_element("td:nth-of-type(3) span.label") %>% html_text2(),
                            action_files = actions %>% html_element("td:nth-of-type(4)") %>% html_text2(),
                            action_read_acknowledged = actions %>% html_element("td:nth-of-type(8)") %>% html_text2(),
                            action_id = actions %>% html_element("td:nth-of-type(1) a") %>%

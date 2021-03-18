@@ -101,4 +101,21 @@ get_credential <- function(credential = c("cid","username","password")) {
   cred
 }
 
+get_session <- function() {
+  # Get session
+  s <- session("https://suite.vairkko.com/APP/index.cfm/BehaviorTracking/Dashboard")
+
+
+  f <- html_form(s)[[1]]
+
+  f <- html_form_set(f,
+                     companyid = get_credential("cid"),
+                     username = get_credential("username"),
+                     password = get_credential("password"))
+
+  s <- session_submit(s, f) %>%
+    session_jump_to("https://suite.vairkko.com/APP/index.cfm/BehaviorTracking/Dashboard")
+  s
+}
+
 

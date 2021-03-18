@@ -23,9 +23,10 @@ Imports:
     magrittr,
     tidyverse,
     glue,
-    rvest (>= 1.0.0),
+    rvest,
     keyring,
-    here
+    here,
+    progress
 Suggests: 
     knitr,
     rmarkdown

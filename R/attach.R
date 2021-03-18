@@ -1,4 +1,4 @@
-core <- c("tidyverse", "rvest")
+core <- c("magrittr", "tidyverse", "rvest")
 
 core_unloaded <- function() {
   search <- paste0("package:", core)
