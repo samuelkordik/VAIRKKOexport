@@ -13,13 +13,17 @@ download_all_incident_prints <- function(path) {
 
   # Get incidents
   incidents <- s %>% html_element("#tableincidents") %>% html_table()
-  incidents[!duplicated(as.list(incidents))]
+  incidents <- incidents[!duplicated(as.list(incidents))]
 
-
+  pb <<- progress::progress_bar$new(total = nrow(incidents))
+  path <- here::here("")
+  walk(incidents$IncidentID, download_print_version, s, path)
 
 }
 
 download_print_version <- function(incidentId, s, path) {
+  #message(glue::glue("Saving incident {incidentId} to {path}"))
+  pb$tick()
   s %>% session_jump_to(paste0("https://suite.vairkko.com/APP/index.cfm/BehaviorTracking/Print?IncidentID=", incidentId)) -> print_version
   print_version %>% read_html() %>%
     #html_element("body") %>%
@@ -27,5 +31,5 @@ download_print_version <- function(incidentId, s, path) {
     str_remove_all(regex("<script.+?</script>",dotall=TRUE, multiline=TRUE)) %>%
     str_remove(regex('<div class="row no-print">.+?</div>', dotall=TRUE, multiline=TRUE)) %>%
     #cat()
-    write_file(paste0(path, "Incident ", incidentId, ".html"))
+    write_file(paste0(path, "/Incident ", incidentId, ".html"))
 }

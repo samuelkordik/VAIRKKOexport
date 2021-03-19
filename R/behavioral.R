@@ -9,8 +9,10 @@
 #' @export
 #'
 export_behavioral_incidents <- function(limit = NULL) {
+  s <- get_session()
+
   # First, load incidents:
-  incidents <- get_behavioral_incidents()
+  incidents <- get_behavioral_incidents(s)
 
   message(glue::glue("Scraped {nrow(incidents)} behavioral incidents."))
 
@@ -21,34 +23,24 @@ export_behavioral_incidents <- function(limit = NULL) {
   }
 
   # add detail:
+  pb <- progress::progress_bar$new(total = nrow(incidents))
   incidents <- incidents %>%
-    mutate(incident_details = map(IncidentID, get_incident_detail))
+    mutate(incident_details = map(IncidentID, get_incident_detail, pb))
 
   incidents %>% unnest(incident_details) %>% unnest(detail_actions)
 
 }
 
-get_behavioral_incidents <- function() {
-  # Get session
-  s <<- session("https://suite.vairkko.com/APP/index.cfm/BehaviorTracking/Dashboard")
-
-
-  f <- html_form(s)[[1]]
-
-  f <- html_form_set(f,
-                     companyid = get_credential("cid"),
-                     username = get_credential("username"),
-                     password = get_credential("password"))
-
-  s <<- session_submit(s, f) %>%
-    session_jump_to("https://suite.vairkko.com/APP/index.cfm/BehaviorTracking/Dashboard")
+get_behavioral_incidents <- function(s) {
+  s %>% session_jump_to("https://suite.vairkko.com/APP/index.cfm/BehaviorTracking/Dashboard")
 
   # Get incidents
   incidents <- s %>% html_element("#tableincidents") %>% html_table()
   incidents[!duplicated(as.list(incidents))]
 }
 
-get_incident_detail <- function(incidentID) {
+get_incident_detail <- function(incidentID, pb) {
+  pb$tick()
   message(glue::glue("Retrieving incident details for incident #{incidentID}"))
   url <- paste0("https://suite.vairkko.com/APP/index.cfm/BehaviorTracking/IncidentDetail?IncidentID=", incidentID)
   incident_detail <- s %>% session_jump_to(url)
@@ -65,9 +57,14 @@ get_incident_detail <- function(incidentID) {
     detail_files <- detail_files %>% add_row()
   }
 
+  incident_detail %>% html_elements("button.btn-primary") %>% html_attr("onclick") -> close_open
+  closed <- str_detect(close_open, "reopenIncident") %>% any() %>% replace_na(FALSE)
+  open <- str_detect(close_open, "closeoutIncident") %>% any() %>% replace_na(FALSE)
 
+  stopifnot(open != closed)
 
   tibble(detail_incident_date = incident_detail %>% html_element("#IncidentDate") %>% html_attr("value"),
+         detail_status = if_else(closed, "Closed", "Open"),
          detail_followers = incident_detail %>% html_elements("#FollowerID option[selected]") %>%
            html_text2()%>% paste(collapse="; "),
          detail_group_followers = incident_detail %>% html_elements("#FollowerGroupID option[selected]") %>%
