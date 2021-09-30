@@ -7,8 +7,6 @@
 #' and save a CSV master table listing all iForms, the number of attachments,
 #' and their path (relative to the root path).
 #'
-#'
-#'
 #' Downloads the "Print" version of all iForms and saves as an html file. Saves
 #' CSV master table in CSV format in root. Files are organized within parent
 #' directories by category and child directories by iForm name. Files are named
@@ -25,6 +23,8 @@
 #' @param sanitize_replacement String passed through to
 #'   \code{\link[fs:path_sanitize]{fs::path_sanitize}} to replace control and
 #'   reserved characters in filenames. Defaults to "-".
+#' @param start_date "From" date parameter. Either a date object or a character in Y-m-d format.
+#' @param end_date "To" date parameter. Either a date object or a character in Y-m-d format.
 #'
 #' @details # Details This function will create an rvest session using stored
 #'   authentication parameters. If not set, it will prompt in interactive mode
@@ -40,6 +40,8 @@
 #'   purposes.
 #' @export
 download_iforms<- function(path,
+                           start_date,
+                           end_date,
                            dir_template = "%Y-%m-%d %H%M%S iForms Export",
                            filename_template = "{ID}_{iForm}.html",
                            sanitize_replacement = "-") {
@@ -47,7 +49,7 @@ download_iforms<- function(path,
   s <- get_session()
 
   # Get incidents
-  iforms <- get_iforms(s)
+  iforms <- get_iforms(s, start_date, end_date)
 
   iforms <- iforms %>% select(ID, iForm, Category, `Days Open`, `Created By`, `Created On`, Subject, `Member Location`, `Member Department`, `Member Company`)
 
@@ -151,14 +153,29 @@ download_iform <- function(ID, Category, iForm, s, root, filename_template, pb) 
   ret
 }
 
-get_iforms <- function(s) {
+get_iforms <- function(s, start_date, end_date) {
 
   # pulls iforms table, ID, and information
   stopifnot(class(s) == "rvest_session")
 
   #TODO get closed and archived iForms
 
-  jurl <- "https://suite.vairkko.com/APP/index.cfm/iForm/AdminSplash?submittedForm=1&FText=&from=08%2F01%2F2015&to=08%2F31%2F2021&FID=&Ffilt=1&__ncforminfo=DGYOTpy44UmlPVK8yMSmFQDabRQT7AeJ74lAK0fzlRee7tX5RG7lqWPhLa-6SMYw4D2T8woii9eIJCSsOTBkmxMJX1u5W_t56Hjh1mWob0Q%3D"
+  # parse dates
+  parse_date <- function(the_date) {
+    stopifnot(is.character(the_date) | lubridate::is.timepoint(the_date))
+    if (is.character(the_date)) {
+      the_date <- lubridate::ymd(the_date)
+    }
+    stopifnot(!is.na(the_date))
+    URLencode(format.Date(the_date, "%m/%d/%Y"), reserved=TRUE)
+  }
+
+  start_date <- parse_date(start_date)
+  end_date <- parse_date(end_date)
+
+
+  jurl <- glue::glue("https://suite.vairkko.com/APP/index.cfm/iForm/AdminSplash?submittedForm=1&FText=&from={start_date}&to={end_date}&FID=&Ffilt=1&__ncforminfo=DGYOTpy44UmlPVK8yMSmFQDabRQT7AeJ74lAK0fzlRee7tX5RG7lqWPhLa-6SMYw4D2T8woii9eIJCSsOTBkmxMJX1u5W_t56Hjh1mWob0Q%3D")
+  message(jurl)
   s %>% session_jump_to(jurl) %>%
     html_element("#iForm_Active") %>% html_table() -> iforms
 
@@ -197,33 +214,3 @@ get_iform_detail_data <- function(section) {
     section %>% html_element("label.label") %>% html_text(), section %>% html_element("label.input") %>% html_text()
   )
 }
-
-export_all_complaints <- function(path) {
-  # Create session
-  s <- get_session()
-  stopifnot(class(s) == "rvest_session")
-
-  # First, load incidents:
-  complaints <- get_complaints(s)
-  complaints %>% select(-1, -2) -> complaints
-
-  message(glue::glue("Scraped {nrow(complaints)} complaints."))
-
-
-  # add detail:
-  pb <- progress::progress_bar$new(total = nrow(complaints),
-                                   format = "Getting details for :ID [:bar] :percent eta: :eta",
-                                   clear = FALSE)
-  complaints <- complaints %>%
-    mutate(complaint_details = map(ID, get_complaint_detail, s, pb))
-
-
-
-  complaints %>%
-    unnest(complaint_details, names_repair = "universal" ) -> complaints
-
-  the_words <- c(complaints$incident_id, complaints$complaint_name, complaints$complaint_phone, complaints$pt_name)
-
-  unique(the_words) -> the_words
-  clipr::write_clip(the_words)
-  }
