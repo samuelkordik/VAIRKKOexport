@@ -64,18 +64,21 @@ download_iforms<- function(path,
   fs::dir_create(root)
 
   # Sanitize
-
-
   iforms %>%
     mutate(across(where(is.character), fs::path_sanitize, sanitize_replacement, .names="{.col}")) -> sanitized_iforms
 
-  create_sub_dirs <- function(Category, iForm) {
+  create_sub_dirs <- function(Category, iForm, root) {
     sub_path <- paste(root, Category, iForm, sep="/")
+    message(sub_path)
     fs::dir_create(sub_path)
-    glue_msg("Created {sub_path}")
+    message(glue::glue("Created {sub_path}"))
+    sub_path
   }
 
-  pwalk(sanitized_iforms %>% distinct(Category, iForm), create_sub_dirs)
+  sanitized_iforms %>% distinct(Category, iForm) -> dir_lists
+
+  pmap_chr(sanitized_iforms %>% distinct(Category, iForm), create_sub_dirs, root) -> dirs
+
   iforms_list <- sanitized_iforms %>% select(ID, Category, iForm)
 
   pb <- progress::progress_bar$new(total = nrow(iforms_list),
