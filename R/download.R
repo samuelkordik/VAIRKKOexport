@@ -8,22 +8,22 @@
 #'
 download_all_incident_prints <- function(path) {
   # Get session
-  s <- get_session() %>%
-    session_jump_to("https://suite.vairkko.com/APP/index.cfm/BehaviorTracking/Dashboard")
+  s <- get_session()
 
   # Get incidents
-  incidents <- s %>% html_element("#tableincidents") %>% html_table()
-  incidents <- incidents[!duplicated(as.list(incidents))]
+  incidents <- get_behavioral_incidents(s)
 
-  pb <<- progress::progress_bar$new(total = nrow(incidents))
+  pb <- progress::progress_bar$new(total = nrow(incidents),
+                                    format = "s",
+                                    clear = FALSE)
   path <- here::here("")
-  walk(incidents$IncidentID, download_print_version, s, path)
+  walk(incidents$IncidentID, download_print_version, s, path, pb)
 
 }
 
-download_print_version <- function(incidentId, s, path) {
+download_print_version <- function(incidentId, s, path, pb) {
   #message(glue::glue("Saving incident {incidentId} to {path}"))
-  pb$tick()
+  pb$tick(tokens = list(incidentid = incidentId))
   s %>% session_jump_to(paste0("https://suite.vairkko.com/APP/index.cfm/BehaviorTracking/Print?IncidentID=", incidentId)) -> print_version
   print_version %>% read_html() %>%
     #html_element("body") %>%

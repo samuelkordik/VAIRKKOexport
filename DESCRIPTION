@@ -1,7 +1,7 @@
 Package: vairkkoexport
 Type: Package
 Title: Extract Data from VAIRKKO for Export
-Version: 0.1.0
+Version: 0.5.0
 Author: Samuel Kordik
 Maintainer: Samuel Kordik <samuel@samuelkordik.com>
 Authors@R: 

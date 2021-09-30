@@ -4,3 +4,6 @@ progress_walk <- function(.x, .f, ...) {
   purrr::walk(.x, ~{pb$tick(); .f(.x,...)})
 }
 
+glue_msg <- function(...) {
+  message(glue::glue(...))
+}

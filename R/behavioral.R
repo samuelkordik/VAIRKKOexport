@@ -9,10 +9,31 @@
 #' @export
 #'
 export_behavioral_incidents <- function(limit = NULL) {
+
+  # Create session
   s <- get_session()
+  stopifnot(class(s) == "rvest_session")
 
   # First, load incidents:
   incidents <- get_behavioral_incidents(s)
+
+  stopifnot(any(class(incidents) == "tbl_df"))
+
+  stopifnot(all.equal(colnames(incidents),
+                      c("Status",
+                           "Incident Date",
+                           "Created By",
+                           "Updated",
+                           "Member",
+                           "Title",
+                           "Category",
+                           "Actions",
+                           "Appeals",
+                           "Comments",
+                           "Files",
+                           "Points",
+                        "IncidentID")))
+
 
   message(glue::glue("Scraped {nrow(incidents)} behavioral incidents."))
 
@@ -23,25 +44,38 @@ export_behavioral_incidents <- function(limit = NULL) {
   }
 
   # add detail:
-  pb <- progress::progress_bar$new(total = nrow(incidents))
+  pb <- progress::progress_bar$new(total = nrow(incidents),
+                                   format = "Getting details for :incidentid [:bar] :percent eta: :eta",
+                                   clear = FALSE)
   incidents <- incidents %>%
-    mutate(incident_details = map(IncidentID, get_incident_detail, pb))
+    mutate(incident_details = map(IncidentID, get_incident_detail, s, pb))
 
-  incidents %>% unnest(incident_details) %>% unnest(detail_actions)
+
+  incidents %>%
+    unnest(incident_details) %>%
+    unnest(detail_actions) %>%
+    mutate(detail_narrative = str_trim(detail_narrative),
+           detail_visibility = str_trim(detail_visibility))
 
 }
 
 get_behavioral_incidents <- function(s) {
-  s %>% session_jump_to("https://suite.vairkko.com/APP/index.cfm/BehaviorTracking/Dashboard")
+  stopifnot(class(s) == "rvest_session")
+
+  s %>% session_jump_to("https://suite.vairkko.com/APP/index.cfm/BehaviorTracking/Incidents") %>%
+    html_element("#tableIncidentsResults") %>% html_table() -> incidents
+
 
   # Get incidents
-  incidents <- s %>% html_element("#tableincidents") %>% html_table()
-  incidents[!duplicated(as.list(incidents))]
+  incidents[!duplicated(as.list(incidents))] -> incidents
+  incidents %>% replace_na(list(Actions = 0, Appeals = 0, Comments = 0, Files = 0)) -> incidents
+  incidents %>% mutate(IncidentID = str_extract(Title, "^\\d+?(?=:)"))
 }
 
-get_incident_detail <- function(incidentID, pb) {
-  pb$tick()
-  message(glue::glue("Retrieving incident details for incident #{incidentID}"))
+get_incident_detail <- function(incidentID, s, pb) {
+  stopifnot(class(s) == "rvest_session")
+
+  pb$tick(tokens = list(incidentid = incidentID))
   url <- paste0("https://suite.vairkko.com/APP/index.cfm/BehaviorTracking/IncidentDetail?IncidentID=", incidentID)
   incident_detail <- s %>% session_jump_to(url)
 
@@ -86,7 +120,6 @@ get_incident_detail <- function(incidentID, pb) {
 }
 
 get_incident_files <- function(incident_file) {
-  message(glue::glue("Retrieving incident files"))
   tibble(file_uploaded_on = incident_file %>% html_element("td:nth-of-type(2)") %>% html_text2(),
          file_url = incident_file %>% html_element("td:nth-of-type(3) a") %>% html_attr("href"),
          file_name = incident_file %>% html_element("td:nth-of-type(3)") %>% html_text2(),
@@ -99,28 +132,47 @@ get_incident_files <- function(incident_file) {
 #'
 #' Walks through incident files list column and saves files to designated path.
 #'
-#' @param incident_files List column of incident_files tibble
+#' @param incidents Incidents tibble
 #' @param path Path to save files to
 #'
 #' @return returns input invisibly
 #' @export
-download_incident_files <- function(incident_files, path) {
-  walk(incident_files$file_url, download_file, path)
+download_incident_files <- function(incidents, path) {
+
+  stopifnot(any(class(incidents) == "tbl_df"))
+
+  incident_files <- incidents %>% select(detail_files) %>% unnest(detail_files) %>% drop_na()
+
+  stopifnot(any(colnames(incident_files) == "file_url"))
+  stopifnot(all(fs::dir_exists(path)))
+
+  # Restart session
+  if (exists("s")) rm(s)
+  s <- get_session()
+
+  message(glue::glue("Saving {nrow(incident_files)} files to {path}"))
+
+  pb <- progress::progress_bar$new(total = nrow(incident_files),
+                                   format = "Downloading :file [:bar] :percent eta: :eta",
+                                   clear = FALSE)
+
+  walk(incident_files$file_url, download_file, path, s, pb)
 }
 
-download_file <- function(file_url, path) {
+download_file <- function(file_url, path, s, pb) {
+  stopifnot(class(s) == "rvest_session")
+
   if (!is.na(file_url)) {
     file_name_split <- file_url %>% str_split("/")
     file_content <- s %>% session_jump_to(file_url)
     file_name <- URLdecode(paste(tail(file_name_split[[1]],2),collapse="_"))
 
-    message(glue::glue("Saving file {file_name} to {path}"))
+    pb$tick(tokens = list(file = file_name))
     writeBin(file_content$response$content, paste0(path,"/",file_name))
   }
 }
 
 get_action_details <- function(actions) {
-  message(glue::glue("Retrieving action details"))
   tibble(action_date = actions %>% html_element("td:nth-of-type(2) span") %>% html_text2(),
                            action_created = actions %>% html_element("td:nth-of-type(2) span") %>% html_attr("title"),
                            action_author = actions %>% html_element("td:nth-of-type(2) a") %>% html_text2(),
