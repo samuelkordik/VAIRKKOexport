@@ -4,6 +4,8 @@
 # vairkkoexport
 
 <!-- badges: start -->
+
+[![R-CMD-check](https://github.com/samuelkordik/VAIRKKOexport/workflows/R-CMD-check/badge.svg)](https://github.com/samuelkordik/VAIRKKOexport/actions)
 <!-- badges: end -->
 
 The goal of vairkkoexport is to simplify extracting structured

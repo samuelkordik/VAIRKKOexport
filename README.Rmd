@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 # vairkkoexport
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/samuelkordik/VAIRKKOexport/workflows/R-CMD-check/badge.svg)](https://github.com/samuelkordik/VAIRKKOexport/actions)
 <!-- badges: end -->
 
 The goal of vairkkoexport is to simplify extracting structured information from VAIRKKO. This exported information can then be saved for archival purposes or imported to other systems. At this time, only exporting behavioral incidents is supported.
