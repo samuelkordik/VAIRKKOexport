@@ -1,0 +1,28 @@
+﻿Category,Violation,,,,,
+Attendance and Punctuality,Attendance/Tardiness,,,,,
+Policy Violation,Policy Violation,,,,,Attendance/Tardiness
+Kudos Peer Recognition,Praise,,,,,Policy Violation
+Controlled Medication Documentation Error,Controlled Medication Policy Violation,,,,,Praise
+Incorrect Address Shipped Due to Error,Policy Violation,,,,,Controlled Medication Policy Violation
+Best Practices Deviation,Policy Violation,,,,,Vehicle Operations Violation
+Vehicle Operations,Vehicle Operations Violation,,,,,Poor Customer Service
+Lost Equipment,Policy Violation,,,,,Misconduct
+Customer Service,Poor Customer Service,,,,,Safety Violation
+Kudos customer recognition,Praise,,,,,Self-reported violation
+Distractions and Attentiveness,Misconduct,,,,,
+Station / Unit Inspection,Policy Violation,,,,,
+Backing Policy Violation,Safety Violation,,,,,
+Inventory / Op IQ,Policy Violation,,,,,
+PPE Deviation,Safety Violation,,,,,
+Standard of Care,Policy Violation,,,,,
+Protocol Violation / Deviation,Policy Violation,,,,,
+Failure to Maintain Certifications,Policy Violation,,,,,
+Continuing Education,Policy Violation,,,,,
+Specific Behavior Concern(s),Misconduct,,,,,
+Unprepared for shift,Misconduct,,,,,
+Failure to complete Station Captain Duties,Policy Violation,,,,,
+Self-Reported Violation,Self-reported violation,,,,,
+Stage Policy Violation,Safety Violation,,,,,
+Incorrect determinant chosen that was detrimental,Policy Violation,,,,,
+Left notes out of an incident-Put units in danger,Safety Violation,,,,,
+Stretcher Incident,Safety Violation,,,,,

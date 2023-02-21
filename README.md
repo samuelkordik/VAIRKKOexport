@@ -88,3 +88,16 @@ question.
 
 Note: This will currently only access ALL open iForms the user has
 access to.
+
+## Downloading memos
+
+Use the function `download_memos` with a path argument to download all
+memos into a CSV file.
+
+## Fixing CSV file paths for attachments
+
+Most of these export functions will have CSV files with a local path to
+downloaded files. To make these portable, use `add_relative_paths()`,
+which searcehs all CSV files in project directory with path columns,
+then add a column with a relative path and saves out as a new file.
+After confirming results, you can delete the original file.

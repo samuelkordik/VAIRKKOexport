@@ -63,10 +63,10 @@ get_behavioral_incidents <- function(s) {
   stopifnot(class(s) == "rvest_session")
 
   s %>% session_jump_to("https://suite.vairkko.com/APP/index.cfm/BehaviorTracking/Incidents") %>%
-    html_element("#tableIncidentsResults") %>% html_table() -> incidents
+    html_element("#tableIncidentsResults") #>% html_table() -> incidents
 
 
-  # Get incidents
+  fast# Get incidents
   incidents[!duplicated(as.list(incidents))] -> incidents
   incidents %>% replace_na(list(Actions = 0, Appeals = 0, Comments = 0, Files = 0)) -> incidents
   incidents %>% mutate(IncidentID = str_extract(Title, "^\\d+?(?=:)"))
@@ -159,6 +159,16 @@ download_incident_files <- function(incidents, path) {
   walk(incident_files$file_url, download_file, path, s, pb)
 }
 
+dedup_files <- function(file_name, path) {
+  file_path <- paste0(path, "/", file_name)
+  i <- 2
+  while (fs::file_exists(file_path)) {
+    file_path <- paste0(path, "/", i, "_",file_name)
+    i <- i+1
+  }
+file_path
+}
+
 download_file <- function(file_url, path, s, pb) {
   stopifnot(class(s) == "rvest_session")
 
@@ -166,9 +176,9 @@ download_file <- function(file_url, path, s, pb) {
     file_name_split <- file_url %>% str_split("/")
     file_content <- s %>% session_jump_to(file_url)
     file_name <- URLdecode(paste(tail(file_name_split[[1]],2),collapse="_"))
-
+    file_path <- dedup_files(file_name, path)
     pb$tick(tokens = list(file = file_name))
-    writeBin(file_content$response$content, paste0(path,"/",file_name))
+    writeBin(file_content$response$content, file_path)
   }
 }
 

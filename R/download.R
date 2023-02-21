@@ -14,7 +14,7 @@ download_all_incident_prints <- function(path) {
   incidents <- get_behavioral_incidents(s)
 
   pb <- progress::progress_bar$new(total = nrow(incidents),
-                                    format = "s",
+                                    format = "Downloading incident :incidentid [:bar] :percent eta: :eta",
                                     clear = FALSE)
   path <- here::here("")
   walk(incidents$IncidentID, download_print_version, s, path, pb)

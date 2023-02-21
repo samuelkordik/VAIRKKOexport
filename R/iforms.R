@@ -87,22 +87,23 @@ download_iforms<- function(path,
 
   iforms_list %>% mutate(path = "Not saved due to error", `Attachment Name` = NA_character_, `Attachment Path` = NA_character_) -> default_ret
 
-  safe_download <- possibly(download_iform, otherwise = default_ret, quiet=TRUE)
+  safe_download <- possibly(download_iform, otherwise = default_ret, quiet=FALSE)
 
   pmap_dfr(iforms_list, safe_download, s, root, filename_template, pb) -> save_output
 
-  iforms %>% left_join(save_output, by=c("ID", "Category", "iForm")) -> iforms_save
+  iforms %>% left_join(save_output %>% select(-Category, -iForm), by="ID") -> iforms_save
 
   write_excel_csv(iforms_save, paste0(root, "/iForms_Table.csv"))
 }
 
 download_iform <- function(ID, Category, iForm, s, root, filename_template, pb) {
   pb$tick(0, tokens = list(msg = glue::glue("iForm ID {ID} to {Category}/{iForm}")))
-  stopifnot(ID == 462073)
+
   s %>% session_jump_to(paste0("https://suite.vairkko.com/APP/index.cfm/iForm/iFormPrint?incidentID=", ID)) -> print_version
 
   file_name <- glue::glue(filename_template)
   file_path <- paste(root, Category, iForm, file_name, sep="/")
+  stopifnot(!is.na(file_path))
 
   print_version %>% read_html() %>%
     #html_element("body") %>%
@@ -152,6 +153,10 @@ download_iform <- function(ID, Category, iForm, s, root, filename_template, pb) 
   }
 
   ret %>% left_join(attachments, by="ID") -> ret
+
+    #debug code (looking for missing file path)
+  stopifnot(nrow(ret %>% filter(is.na(path))) == 0)
+
   pb$tick(tokens = list(msg = glue::glue("Finished iForm ID {ID} to {Category}/{iForm}")))
   ret
 }

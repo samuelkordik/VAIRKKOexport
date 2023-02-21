@@ -1,0 +1,19 @@
+---
+title: "Process Memos"
+output: html_notebook
+---
+
+```{r}
+memos <- read_csv(here::here("memos/Memos_Table.csv"))
+
+memos %>% mutate(relative_path = stringr::str_remove(file_path, paste0(here::here(),"/"))) -> memos
+
+memos %>% write_csv(here::here("memos/Memos_Table_rel.csv"))
+
+memo1 <- memos[1,]
+memo1_file <- read_html(here::here(memo1$relative_path))
+
+memo1_file %>% html_elements()
+
+```
+

@@ -1,0 +1,58 @@
+---
+title: "Process Incidents 2"
+output: html_notebook
+---
+```{r}
+source(here::here("R/process.R"))
+
+#incidents <- import_incidents()
+incidents_path <- here::here("data/incidents_export2.rds")
+incidents <- read_rds(incidents_path)
+```
+```{r}
+incidents <- trim_strings(incidents)
+    incidents <- trim_strings(incidents)
+    incidents <- create_output_columns(incidents)
+    incidents <- add_action_types(incidents)
+    incidents <- set_resolution_status(incidents)
+    incidents <- adjust_categories(incidents)
+    incidents <- create_output_columns2(incidents)
+    incidents <- format_extra_narrative(incidents)
+    incidents <- set_incident_type(incidents)
+    incidents <- input_employee_names(incidents)
+    incidents <- remove_tests(incidents)
+    output <- get_output(incidents)
+
+source(here::here("R/output_test.R"))
+test_output(output) %>% filter(!is.na(test_results)) %>% count(test_results)
+test_output(output) %>% filter(!is.na(test_results)) %>%
+  filter(test_results == "Date formats wrong") %>% View()
+```
+
+```{r}
+
+# Clean up output
+
+output %>% mutate(across(where(is.character), str_trim)) -> output
+
+output %>% write_excel_csv(here::here("out/export2.csv"),
+                           na = "")
+
+
+```
+
+```{r}
+sum(incidents$Files, na.rm=TRUE)
+```
+Download files
+```{r}
+library(vairkkoexport)
+download_incident_files(incidents, path=here::here("downloads"))
+
+fs::dir_ls(here::here("downloads")) %>% length()
+```
+```{r}
+library(vairkkoexport)
+download_all_incident_prints(here::here("archives"))
+```
+

@@ -18,7 +18,7 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Imports:
     magrittr,
     tidyverse,
@@ -26,7 +26,21 @@ Imports:
     rvest,
     keyring,
     here,
-    progress
+    progress,
+    askpass,
+    cli,
+    clipr,
+    crayon,
+    fs,
+    httr,
+    lubridate,
+    purrr,
+    readxl,
+    rstudioapi,
+Depends:
+    magrittr,
+    tidyverse,
+    stringr
 Suggests: 
     knitr,
     rmarkdown
